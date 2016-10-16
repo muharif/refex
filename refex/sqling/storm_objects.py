@@ -47,6 +47,23 @@ class Ensembl2GO(object):
     ensembl= Reference(ensembl_id, Ensembl.id)
     go= Reference(go_id, GO.id)
 
+class Ensembl2HpaClass(object):
+    __storm_table__= "ensembl2hpaclass"
+    id = Int(primary = True)
+    ensembl_id = Unicode()
+    hpaclass_id= Int()
+    ensembl= Reference(ensembl_id, Ensembl.id)
+    hpaclass= Reference(hpa_class_id, HpaClass.id)
+
+class Ensembl2HpaSubLoc(object):
+    __storm_table__ = "ensembl2hpasubloc"
+    id= Int(primary= True)
+    ensembl_id= Unicode()
+    hpasubloc_id= Int()
+    ensembl= Reference(ensembl_id, Ensembl.id)
+    hpasubloc= Reference(hpasubloc_id, HpaSubLoc.id)
+
+
 class Uniprot2HpaClass(object):
     __storm_table__= "uniprot2hpaclass"
     id= Int(primary = True)
@@ -72,4 +89,15 @@ class Ensembl2KEGG(object):
     kegg_id= Int()
     ensembl= Reference(ensembl_id, Ensembl.id)
     kegg= Reference(kegg_id, KEGG.id)
+
+
+trash= """
+class Ensembl2Uniprot(object):
+    __storm_table__= "ensembl2uniprot"
+    id= Int(primary= True)
+    ensembl_id= Unicode()
+    uniprot_id= Unicode()
+    ensembl= Reference(ensembl_id, Ensembl.id)
+    uniprot= Reference(uniprot_id, Uniprot.id)
+"""
 

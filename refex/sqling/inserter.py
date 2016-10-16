@@ -11,12 +11,10 @@ from storm_objects import Ensembl2GO, Uniprot2HpaClass, Uniprot2HpaSubLoc
 from db_base import DBBase
 
 
-sql_db_path= "../mapping/refex.db"
-
 class Inserter(DBBase):
     def __init__(self):
 
-        DBBase.__init__(self, sql_db_path)
+        DBBase.__init__(self)
         
         #self.db_base.drop_tables()
         #self.db_base.create_tables()
@@ -118,15 +116,14 @@ class Inserter(DBBase):
             symbol= cols[1]
             synonyms= cols[4]
             entrez_id= cols[8]
-            uniprot_id= cols[11]
             ensembl_id= cols[12]
 
             
-            if entrez_id == "" or uniprot_id == "" or ensembl_id == "":
+            if entrez_id == "" or ensembl_id == "":
                 continue
             self.insert_ensembl(ensembl_id, entrez_id, uniprot_id, symbol, synonyms)    
 
-
+            
 
     def insert_hpa_protclasses_sublocs(self):
         protclasses= {}
@@ -344,6 +341,27 @@ trash= """
             except:
                 pdb.set_trace()
 
+
+
+
+    def insert_ensembl2uniprot(self):
+        f_ensemble_mapping = open("../mapping/hgnc.mapping.table.2016-07-15.xls")
+        header= f_ensemble_mapping.next()
+
+        for line in f_ensemble_mapping:
+            cols= line.rstrip('\n').split('\t')         
+            
+            uniprot_id= cols[11]
+            ensembl_id= cols[12]
+
+
+            if ensemble_id == "" or uniprot_id == "":
+                continue
+
+
+            e2u = Ensembl2Uniprot()
+            e2u.ensembl_id= ensemble_id
+            e2u.uniprot_id= uniprot_id
 
 
 """

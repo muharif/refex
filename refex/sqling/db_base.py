@@ -1,3 +1,4 @@
+import os
 from collections import OrderedDict
 from storm.locals import Store, create_database
 
@@ -6,11 +7,13 @@ tables= ["ensembl", "uniprot", "go", "hpaclass", "hpasubloc", "kegg",
          "ensembl2go","uniprot2hpaclass", "uniprot2hpasubloc", "ensembl2kegg" ]
 
 
-class DBBase(object):
-    def __init__(self, sql_db_path):
-        self.sql_db_path= sql_db_path 
-        self.__init_database()
+sql_db_path= os.path.join(os.path.dirname(__file__), "../mapping/refex.db")
 
+class DBBase(object):
+    def __init__(self):
+        self.sql_db_path= sql_db_path
+        self.__init_database()
+        self.create_table_strings= {}
 
     def __init_database(self):    
         """
@@ -42,67 +45,75 @@ class DBBase(object):
 
     def generate_table_strings(self):
 
-        self.create_ensembl_string=  self.generate_create_table_string("ensembl", 
+        self.create_table_strings["ensembl"]=  self.generate_create_table_string("ensembl", 
                                     OrderedDict([("id", "VARCHAR PRIMARY KEY"),
                                             ("entrez_id", "INTEGER"), ("uniprot_id", "VARCHAR"),
                                             ("symbol","VARCHAR"),("synonyms","VARCHAR")]),
                                             {"uniprot_id":("uniprot", "id")}) 
         
-        self.create_uniprot_string= self.generate_create_table_string("uniprot",
+        self.create_table_strings["uniprot"]= self.generate_create_table_string("uniprot",
                                     OrderedDict([("id", "VARCHAR PRIMARY KEY"),
                                               ("name", "VARCHAR") ]) )
         
-        self.create_go_string= self.generate_create_table_string("go",
+        self.create_table_strings["go"]= self.generate_create_table_string("go",
                                     OrderedDict([("id", "VARCHAR PRIMARY KEY"),
                                               ("name", "VARCHAR"), ("domain","INTEGER")]))
         
 
-        self.create_kegg_string= self.generate_create_table_string("kegg",
+        self.create_table_strings["kegg"]= self.generate_create_table_string("kegg",
                                     OrderedDict([("id", "VARCHAR PRIMARY KEY"),
                                      ("name", "VARCHAR")]))
 
-        self.create_hpaclass_string= self.generate_create_table_string("hpaclass",
+        self.create_table_strings["hpaclass"]= self.generate_create_table_string("hpaclass",
                                     OrderedDict([("id", "INTEGER PRIMARY KEY"),
                                                 ("name", "VARCHAR")]))
 
-        self.create_hpasubloc_string= self.generate_create_table_string("hpasubloc",
+        self.create_table_strings["hpasubloc"]= self.generate_create_table_string("hpasubloc",
                                    OrderedDict([("id", "INTEGER PRIMARY KEY"),
                                                 ("name", "VARCHAR")]))
         
-        self.create_ensembl2go_string= self.generate_create_table_string("ensembl2go",
+        self.create_table_strings["ensembl2go"]= self.generate_create_table_string("ensembl2go",
                                    OrderedDict([("id", "INTEGER PRIMARY KEY"),
                                                 ("ensembl_id", "VARCHAR"), ("go_id", "VARCHAR")]),
                                                 
                                                 {"ensembl_id":("ensembl", "id"),
                                                  "go_id": ("go","id")})
 
-        self.create_uniprot2hpaclass_string= self.generate_create_table_string("uniprot2hpaclass",
+        self.create_table_strings["uniprot2hpaclass"]= self.generate_create_table_string("uniprot2hpaclass",
                                     OrderedDict([("id","INTEGER PRIMARY KEY"),
                                                  ("uniprot_id","VARCHAR"), ("hpaclass_id", "INTEGER") ]),
                                                  
                                                  {"uniprot_id":("uniprot","id"), "hpaclass_id":("hpaclass","id")})
 
-        self.create_uniprot2hpasubloc_string= self.generate_create_table_string("uniprot2hpasubloc",
+        self.create_table_strings["uniprot2hpasubloc"]= self.generate_create_table_string("uniprot2hpasubloc",
                                     OrderedDict([("id","INTEGER PRIMARY KEY"),
                                                  ("uniprot_id","VARCHAR"), ("hpasubloc_id", "INTEGER") ]),
                                                  {"uniprot_id":("uniprot","id"), "hpasubloc_id":("hpasubloc","id")})
 
-        self.create_ensembl2kegg_string=  self.generate_create_table_string("ensembl2kegg",
+        self.create_table_strings["ensembl2kegg"]=  self.generate_create_table_string("ensembl2kegg",
                                     OrderedDict([("id","INTEGER PRIMARY KEY"),
                                                  ("ensembl_id","VARCHAR"), ("kegg_id", "VARCHAR") ]),
                                                  {"ensembl_id":("ensembl","id"), "kegg_id":("kegg","id")})
+        
+        self.create_table_strings["ensembl2hpasubloc"]= self.generate_create_table_string("ensembl2hpasubloc",
+                                    OrderedDict([("id","INTEGER PRIMARY KEY"),
+                                                 ("ensembl_id","VARCHAR"), ("hpasubloc_id", "INTEGER") ]),
+                                                 {"ensembl_id":("ensembl","id"), "hpasubloc_id":("hpasubloc","id")})
+
+        self.create_table_strings["ensembl2hpaclass"]= self.generate_create_table_string("ensembl2hpaclass",
+                                    OrderedDict([("id","INTEGER PRIMARY KEY"),
+                                                 ("ensembl_id","VARCHAR"), ("hpaclass_id", "INTEGER") ]),
+                                                 
+                                                 {"ensembl_id":("ensembl","id"), "hpaclass_id":("hpaclass","id")})
 
 
+    def create_table(self, table_name):
+        self.store.execute(self.create_table_strings[table_name])
+        self.store.commit()
 
+    
     def create_tables(self):
-
-        create_table_strings= [ self.create_ensembl_string, create_uniprot_string,
-                                     self.create_hpaclass_string, create_hpasubloc_string,
-                                     self.create_go_string, create_ensembl2go_string,
-                                     self.create_uniprot2hpaclass_string, self.create_uniprot2hpasubloc_string, 
-                                     self.create_ensembl2kegg_string]
-
-        for create_table_string in create_table_strings:
+        for table_name, create_table_string in self.create_table_strings.iteritems():
             self.store.execute(create_table_string)
             self.store.commit() 
 

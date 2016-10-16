@@ -8,11 +8,10 @@ from db_base import DBBase
 
 import pdb
 
-sql_db_path= "../mapping/refex.db"
 
 class Selector(DBBase):
     def __init__(self):
-        DBBase.__init__(self, sql_db_path)
+        DBBase.__init__(self)
 
 
     def get_all_hpaclasses(self):
@@ -38,8 +37,13 @@ class Selector(DBBase):
     def get_hpaclass_by_name(self, hpa_class_name):
         return self.store.find(HpaClass, HpaClass.name.lower() == unicode(hpa_class_name).lower()).one()
 
+    def get_hpaclass_by_id(self, hpaclass_id):
+        return self.store.find(HpaClass, HpaClass.id == int(hpaclass_id)).one()
+
     def get_hpasubloc_by_name(self, hpa_subloc_name):
         return self.store.find(HpaSubLoc, HpaSubLoc.name.lower() == unicode(hpa_subloc_name).lower()).one()
+    def get_hpasubloc_by_id(self, hpasubloc_id):
+        return self.store.find(HpaSubLoc, HpaSubLoc.id == int(hpasubloc_id)).one()
 
 
     def get_ensembl_by_symbol(self, symbol):
@@ -51,6 +55,9 @@ class Selector(DBBase):
     def get_go_by_name(self, go_name):
         return self.store.find(GO, GO.name  == unicode(go_name)).one()
 
+
+
+
     def get_uniprot_by_id(self, uniprot_id):
         return self.store.find(Uniprot, Uniprot.id  == unicode(uniprot_id)).one()
 
@@ -60,10 +67,14 @@ class Selector(DBBase):
             for ensembl_id in ensembl_ids}
    
     def get_ensembl2uniprot(self, ensembl_ids):
-        return {ensembl_id:self.store.find(Ensembl, \
+        """
+            multiple genes can be coding for the same protein. the function is
+            rewritten as ensembl2uniprots
+        """
+        return {ensembl_id: self.store.find(Ensembl, \
             Ensembl.id == unicode(ensembl_id)).one().uniprot_id \
             for ensembl_id in ensembl_ids}
-
+        
     def get_ensembl2go(self, ensembl_ids):
         Ensembl.gos= ReferenceSet(Ensembl.id, Ensembl2GO.ensembl_id,
                          Ensembl2GO.go_id,
@@ -72,6 +83,8 @@ class Selector(DBBase):
         ensembl2go= {}
         for ensembl_id in ensembl_ids:
             ensembl= self.store.find(Ensembl, Ensembl.id == unicode(ensembl_id)).one()       
+            if not ensembl:    
+                continue
             ensembl2go[ensembl_id]= [go for go in ensembl.gos]
 
         
@@ -102,6 +115,8 @@ class Selector(DBBase):
         ensembl2hpaclass= {}
         for ensembl_id in ensembl_ids:
             ensembl= self.get_ensembl_by_id(unicode(ensembl_id))
+            if not ensembl:    
+                continue
             ensembl2hpaclass[ensembl.id] = [hpaclass for hpaclass in ensembl.hpaclasses]
         
         return ensembl2hpaclass
@@ -109,13 +124,15 @@ class Selector(DBBase):
 
     def get_ensembl2hpasubloc(self, ensembl_ids):
         Ensembl.hpasublocs= ReferenceSet(Ensembl.uniprot_id,  
-                                         Uniprot2SubLoc.uniprot_id,
+                                         Uniprot2HpaSubLoc.uniprot_id,
                                          Uniprot2HpaSubLoc.hpasubloc_id,
                                          HpaSubLoc.id)
         
         ensembl2hpasublocs= {}
         for ensembl_id in ensembl_ids:
             ensembl= self.get_ensembl_by_id(unicode(ensembl_id))
+            if not ensembl:    
+                continue
             ensembl2hpasublocs[ensembl.id] = [hpasubloc for hpasubloc in ensembl.hpasublocs]
         
         return ensembl2hpasublocs
@@ -136,7 +153,7 @@ class Selector(DBBase):
 
 
 
-    def get_go2ensembl(self, go_ids):
+    def get_go2ensembls(self, go_ids):
         GO.ensembles= ReferenceSet(GO.id,
                          Ensembl2GO.go_id, Ensembl2GO.ensembl_id,
                          Ensembl.id)
